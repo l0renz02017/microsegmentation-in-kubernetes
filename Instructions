@@ -15,3 +15,102 @@ network:
   version: 2
 
 Type netplan apply to execute the above file stored at /etc/netplan/50-cloud-init.yaml
+
+Install dependencies
+a) Docker
+Ensure you have Docker and curl installed:
+sudo apt update
+sudo apt install -y docker.io curl
+
+Make sure Docker is running:
+sudo systemctl enable --now docker
+
+b) KinD (Kubernetes in Docker)
+Run the following command to get the latest KinD binary:
+
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+
+Make it executable and move it to a directory in your PATH:
+
+ chmod +x ./kind
+ sudo mv ./kind /usr/local/bin/kind
+
+c) Verify the Installation
+Check if KinD is installed correctly:
+
+kind version
+
+d) Install kubectl
+snap install kubectl --classic
+
+e) Install Kubernetes with Calico
+# Create a KinD cluster with Calico networking
+cat <<EOF | kind create cluster --name microseg-lab --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  disableDefaultCNI: true
+nodes:
+  - role: control-plane
+  - role: worker
+EOF
+
+f) Install Calico
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+g) watch kubectl get pods -A
+
+   Make sure all the pods are in Running Status
+
+h) check master and worker nodes in the KinD cluster
+   kubectl get pods -A
+
+   make sure both are Ready Status
+
+
+
+
+Apply the demo-full yaml file to spin up the 3 pods, i.e. frontend, backend and database
+kubectl apply -f demo-full.yaml
+
+you should get the following output:
+
+namespace/demo created
+deployment.apps/database created
+service/database created
+deployment.apps/backend created
+service/backend created
+deployment.apps/frontend created
+service/frontend created
+networkpolicy.networking.k8s.io/allow-frontend-to-backend created
+networkpolicy.networking.k8s.io/allow-backend-to-database created
+
+Then you can test connectivity:
+
+# Exec into frontend
+====================
+kubectl exec -n demo -it $(kubectl get pod -n demo -l app=frontend -o jsonpath='{.items[0].metadata.name}') -- bash
+
+curl http://backend:80   # works
+
+If you see Thank you for using nginx, means the frontend pod can access the backend pod. (Test passed!)
+
+curl http://database:80  # blocked
+
+You should get no response
+
+# Exec into backend
+===================
+kubectl exec -n demo -it $(kubectl get pod -n demo -l app=backend -o jsonpath='{.items[0].metadata.name}') -- bash
+
+curl http://database:80  # works
+curl http://frontend:80  # works
+
+The following step should fail:
+==============================
+# Exec into frontend
+kubectl exec -n demo -it $(kubectl get pod -n demo -l app=frontend -o jsonpath='{.items[0].metadata.name}') -- bash
+
+# Curl database
+curl http://database:80
+
