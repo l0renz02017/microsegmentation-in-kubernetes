@@ -112,5 +112,5 @@ The following step should fail:
 kubectl exec -n demo -it $(kubectl get pod -n demo -l app=frontend -o jsonpath='{.items[0].metadata.name}') -- bash
 
 # Curl database
-curl http://database:80
+curl http://database:80  # blocked
 
