@@ -1,0 +1,17 @@
+Spin up a Ubuntu VM. For my homelab, I am using Ubuntu 24.04
+
+Fix the network IP address of the VM to 192.168.0.109
+network:
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses:
+        - 192.168.0.109/24
+      gateway4: 192.168.0.1
+      nameservers:
+        addresses:
+          - 1.1.1.1
+          - 8.8.8.8
+  version: 2
+
+Type netplan apply to execute the above file stored at /etc/netplan/50-cloud-init.yaml
