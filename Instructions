@@ -63,7 +63,7 @@ g) watch kubectl get pods -A
    Make sure all the pods are in Running Status
 
 h) check master and worker nodes in the KinD cluster
-   kubectl get pods -A
+   kubectl get nodes -A
 
    make sure both are Ready Status
 
